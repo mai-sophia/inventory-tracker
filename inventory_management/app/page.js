@@ -8,7 +8,7 @@ import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc } from "fire
 export default function Home() {
   // Helper functions
   const [inventory, setInventory] = useState([])
-  const [open, setOpen] = useState(true) // setting default value to false
+  const [open, setOpen] = useState(false) // setting default value to false
   const [itemName, setItemName] = useState('') // setting default value to ''
 
   // Fetch inventory from firebase
@@ -23,7 +23,6 @@ export default function Home() {
       })
     }) // for every element in docs, add to inventory list
     setInventory(inventoryList)
-    console.log(inventoryList)
   }
 
   const addItem = async (item) => {
@@ -31,13 +30,10 @@ export default function Home() {
     const docSnap = await getDoc(docRef) //gets document reference if it exists
 
     if (docSnap.exists()) {
-      if (quantity === 1) {
-        await deleteDoc(docRef)
-        await setDoc(docRef, {quantity: quantity + 1})
-      }
-      else {
-        await setDoc(docRef, {quantity: 1})
-      }
+      const{quantity} = docSnap.data()
+      await setDoc(docRef, {quantity: quantity + 1})
+    } else {
+      await setDoc(docRef, {quantity: 1})
     }
 
     await updateInventory()
@@ -72,6 +68,7 @@ export default function Home() {
   width = "100vw" 
   height = "100vh" 
   display = "flex" 
+  flexDirection="column"
   justifyContent="center" 
   alignItems = "center"
   gap = {2}
@@ -88,27 +85,86 @@ export default function Home() {
         p={4} 
         display="flex" 
         flexDirection="column" 
+        gap={3}
         sx = {{transform: 'translate(-50%, -50%)'}}
-        gap={3}>
+        >
           <Typography variant="h6">Add Item</Typography>
-          <Stack width = "100%" direction="row" spacing={2}>
+          <Stack width="100%" direction="row" spacing={2}>
             <TextField 
               variant='outlined'
               fullWidth
               value={itemName}
-              onChange={(e)=> {
+              onChange={(e) => {
                 setItemName(e.target.value)
               }}
             />
-            <Button variant="outlined" onClick={() => {
-              addItem(itemName)
-              setItemName('')
-              handleClose()
-            }}></Button>
+            <Button 
+              variant="outlined" 
+              onClick={() => {
+                addItem(itemName)
+                setItemName('')
+                handleClose()
+              }}
+            >
+              Add
+            </Button>
           </Stack>
         </Box>
     </Modal>
-    <Typography variant="h1">Inventory Management</Typography>
+    <Button 
+      variant = "contained" 
+      onClick = {() => {
+        handleOpen()
+      }}
+    >
+      Add New Item
+    </Button>
+    <Box border = "1px solid #333">
+      <Box 
+        width = "800px"
+        height = "100px"
+        bgcolor="#ADD8E6"
+        display = "flex"
+        alignItems="center"
+        justifyContent="center"
+
+      >
+        <Typography variant="h2" color="#333">
+          Inventory Items
+        </Typography>
+      </Box>
+
+    <Stack width="800px" height="300px" spacing={2} overflow="auto">
+      {
+        inventory.map(({name, quantity}) => (
+          <Box 
+            key={name} 
+            width="100%" 
+            minHeight="150px" 
+            display="flex"
+            alignItems="center" 
+            justifyContent="space-between" 
+            bgcolor="#f0f0f0"
+            padding={5}
+          >
+            <Typography variant="h3" color="#333" textAlign="center">
+              {name.charAt(0).toUpperCase() + name.slice(1)}
+            </Typography>
+            <Typography variant="h3" color="#333" textAlign="center">
+              {quantity}
+            </Typography>
+            <Stack direction="row" spacing={2}>
+              <Button variant="contained" onClick={()=>{
+                addItem(name)
+              }}>Add</Button>
+              <Button variant="contained" onClick={()=>{
+                removeItem(name)
+              }}>Remove</Button>
+            </Stack>
+          </Box>
+        ))}
+    </Stack>
+   </Box>
   </Box>
   )
 }
